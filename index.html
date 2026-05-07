@@ -503,11 +503,9 @@
     { prefix: 'PAN', iso: 'pa', count: 20 },
   ];
 
-  // Linhas especiais (FWC topo, FWC base, CC)
+  // Linha especial única: FWC1..FWC20 (no final)
   const specialRows = {
-    fwcTop: { label: 'FWC', codes: ['00', ...Array.from({length: 8}, (_, i) => 'FWC' + (i+1))] },
-    fwcBottom: { label: 'FWC', codes: Array.from({length: 11}, (_, i) => 'FWC' + (i+9)) }, // FWC9..FWC19
-    cc: { label: 'CC', codes: Array.from({length: 14}, (_, i) => 'CC' + (i+1)) },
+    fwc: { label: 'FWC', codes: Array.from({length: 20}, (_, i) => 'FWC' + (i+1)) },
   };
 
   const STORAGE_KEY = 'copa2026_figurinhas_v1';
@@ -527,6 +525,18 @@
         if (obj && typeof obj === 'object') dups = obj;
       }
     } catch(e) { console.warn('Falha ao ler dups', e); }
+
+    // Limpa códigos obsoletos (CC*, '00', FWC>20)
+    const valid = new Set(allValidCodes());
+    for (const code of [...owned]) if (!valid.has(code)) owned.delete(code);
+    for (const code of Object.keys(dups)) if (!valid.has(code)) delete dups[code];
+  }
+
+  function allValidCodes() {
+    const list = [];
+    for (const t of teams) list.push(...buildCodes(t));
+    list.push(...specialRows.fwc.codes);
+    return list;
   }
   function saveState() {
     try {
@@ -585,28 +595,16 @@
     const table = document.getElementById('tabela');
     const parts = [];
 
-    // Linha topo FWC
-    {
-      const codes = specialRows.fwcTop.codes;
-      const cells = codes.map(c => cellHTML(c)).join('');
-      parts.push(`<tr>${specialFlagCellHTML('FWC')}${cells}</tr>`);
-    }
-
     // Times
     for (const team of teams) {
       parts.push(rowHTML(flagCellHTML(team), buildCodes(team)));
     }
 
-    // Linha FWC base + CC
+    // Linha FWC final (FWC1..FWC20)
     {
-      const codes = specialRows.fwcBottom.codes;
+      const codes = specialRows.fwc.codes;
       const cells = codes.map(c => cellHTML(c)).join('');
       parts.push(`<tr>${specialFlagCellHTML('FWC')}${cells}</tr>`);
-    }
-    {
-      const codes = specialRows.cc.codes;
-      const cells = codes.map(c => cellHTML(c)).join('');
-      parts.push(`<tr>${specialFlagCellHTML('CC')}${cells}</tr>`);
     }
 
     table.innerHTML = parts.join('');
@@ -614,10 +612,7 @@
   }
 
   function totalCodes() {
-    let total = 0;
-    total += specialRows.fwcTop.codes.length;
-    total += specialRows.fwcBottom.codes.length;
-    total += specialRows.cc.codes.length;
+    let total = specialRows.fwc.codes.length;
     for (const t of teams) total += t.count;
     return total;
   }
