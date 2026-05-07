@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tabela de Controle de Figurinhas — Copa 2026</title>
+<style>
+  :root {
+    --green-dark: #0a7a3b;
+    --green: #16a34a;
+    --green-light: #22c55e;
+    --cell-bg: #0e6e36;
+    --cell-border: #064e25;
+    --text: #ffffff;
+    --got: #fde047;
+    --got-text: #1a1a1a;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    min-height: 100vh;
+    color: var(--text);
+  }
+  body {
+    background:
+      linear-gradient(135deg, rgba(10,122,59,0.78), rgba(22,163,74,0.72) 60%, rgba(34,197,94,0.78)),
+      url('bgCUp.png') center center / cover no-repeat fixed,
+      #0a7a3b;
+  }
+  header {
+    text-align: center;
+    padding: 20px 16px 10px;
+  }
+  header h1 {
+    margin: 0;
+    font-size: clamp(20px, 3.2vw, 34px);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.25);
+  }
+  header p {
+    margin: 6px 0 0;
+    font-size: clamp(12px, 1.6vw, 16px);
+    opacity: 0.95;
+  }
+  .toolbar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 10px 16px 18px;
+  }
+  .toolbar .stat {
+    background: rgba(0,0,0,0.25);
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .toolbar button {
+    background: #fde047;
+    color: #1a1a1a;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  .toolbar button:hover { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,0.3); }
+  .toolbar button.danger { background: #ef4444; color: #fff; }
+
+  .table-wrap {
+    overflow-x: auto;
+    padding: 0 12px 40px;
+  }
+  table {
+    margin: 0 auto;
+    border-collapse: separate;
+    border-spacing: 3px;
+    background: transparent;
+  }
+  td {
+    background: var(--cell-bg);
+    border: 1px solid var(--cell-border);
+    color: var(--text);
+    text-align: center;
+    font-weight: 700;
+    font-size: 11px;
+    padding: 6px 4px;
+    min-width: 46px;
+    user-select: none;
+    transition: background 0.15s, color 0.15s, transform 0.1s;
+  }
+  td.code {
+    cursor: pointer;
+  }
+  td.code:hover {
+    background: #1a8e4a;
+  }
+  td.code.got {
+    background: var(--got);
+    color: var(--got-text);
+    text-decoration: line-through;
+    box-shadow: inset 0 0 0 2px #ca8a04;
+  }
+  td.code.got:hover {
+    background: #fcd34d;
+  }
+  td.code {
+    position: relative;
+  }
+  td.code .dup-badge {
+    position: absolute;
+    top: -6px;
+    right: -4px;
+    background: #ef4444;
+    color: #fff;
+    border-radius: 10px;
+    padding: 1px 5px;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1.2;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    pointer-events: none;
+    min-width: 14px;
+    text-align: center;
+  }
+
+  /* Modo Repetidas */
+  body.mode-dup td.code {
+    cursor: not-allowed;
+    opacity: 0.45;
+    background: #064e25;
+    color: #9ca3af;
+    text-decoration: none;
+    box-shadow: none;
+  }
+  body.mode-dup td.code.got {
+    cursor: pointer;
+    opacity: 1;
+    background: var(--cell-bg);
+    color: #fff;
+    text-decoration: none;
+    box-shadow: inset 0 0 0 2px #facc15;
+  }
+  body.mode-dup td.code.got:hover {
+    background: #1a8e4a;
+  }
+  body.mode-dup td.code.got.has-dup {
+    background: #b45309;
+    color: #fff;
+    box-shadow: inset 0 0 0 2px #fbbf24;
+  }
+  body.mode-dup td.code.got.has-dup:hover {
+    background: #c2740a;
+  }
+
+  /* Abas */
+  .tabs {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    padding: 0 16px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .tab {
+    background: rgba(0,0,0,0.25);
+    color: #fff;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 12px 12px 0 0;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 14px;
+    border-bottom: 3px solid transparent;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .tab:hover { background: rgba(0,0,0,0.4); }
+  .tab.active {
+    background: rgba(0,0,0,0.45);
+    border-bottom-color: #fde047;
+    color: #fde047;
+  }
+  .tab-info {
+    text-align: center;
+    font-size: 13px;
+    opacity: 0.9;
+    padding: 0 16px 12px;
+  }
+  .tab-info.dup-info { color: #fde047; }
+  td.flag-cell {
+    background: #ffffff;
+    padding: 4px;
+    min-width: 50px;
+    width: 50px;
+  }
+  td.flag-cell img {
+    width: 36px;
+    height: 24px;
+    object-fit: cover;
+    display: block;
+    margin: 0 auto;
+    border: 1px solid #ddd;
+  }
+  td.flag-cell .placeholder {
+    width: 36px;
+    height: 24px;
+    background: linear-gradient(135deg, #facc15, #16a34a);
+    color: #fff;
+    font-size: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    font-weight: 800;
+  }
+  td.special-header {
+    background: #facc15;
+    color: #1a1a1a;
+    font-size: 10px;
+    min-width: 40px;
+  }
+
+  footer {
+    text-align: center;
+    padding: 20px;
+    font-size: 12px;
+    opacity: 0.85;
+  }
+
+  .coffee {
+    margin: 30px auto 10px;
+    max-width: 420px;
+    background: rgba(0,0,0,0.28);
+    border: 2px dashed #fde047;
+    border-radius: 16px;
+    padding: 18px 20px;
+    text-align: center;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  }
+  .coffee h3 {
+    margin: 0 0 6px;
+    font-size: 18px;
+    color: #fde047;
+  }
+  .coffee p {
+    margin: 4px 0 12px;
+    font-size: 13px;
+    opacity: 0.95;
+  }
+  .coffee .pix-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.95);
+    color: #1a1a1a;
+    border-radius: 10px;
+    padding: 6px 8px 6px 12px;
+    font-family: 'Consolas', monospace;
+    font-size: 12px;
+    word-break: break-all;
+  }
+  .coffee .pix-key {
+    flex: 1;
+    text-align: left;
+    user-select: all;
+  }
+  .coffee .copy-btn {
+    background: #16a34a;
+    color: #fff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .coffee .copy-btn:hover { background: #15803d; }
+  .coffee .qr {
+    margin-top: 14px;
+    background: #fff;
+    padding: 8px;
+    border-radius: 10px;
+    display: inline-block;
+  }
+  .coffee .qr img { display: block; width: 160px; height: 160px; }
+
+  @media (max-width: 600px) {
+    td { font-size: 10px; min-width: 40px; padding: 5px 2px; }
+    td.flag-cell img { width: 28px; height: 19px; }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Tabela de Controle de Figurinhas — Copa 2026</h1>
+    <p>Álbum Panini 2026 • Clique em um código para marcar como obtido</p>
+  </header>
+
+  <div class="toolbar">
+    <div class="stat" id="stat">Obtidas: 0 / 0</div>
+    <div class="stat" id="dupStat" title="Total de figurinhas repetidas">Repetidas: 0</div>
+    <button id="copyDupBtn" type="button">Copiar lista de repetidas</button>
+    <button id="exportBtn" type="button">Exportar</button>
+    <button id="importBtn" type="button">Importar</button>
+    <button id="resetBtn" class="danger" type="button">Limpar tudo</button>
+    <input type="file" id="importFile" accept="application/json" hidden />
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab active" id="tabCollection" role="tab" aria-selected="true" type="button">📋 Coleção</button>
+    <button class="tab" id="tabDup" role="tab" aria-selected="false" type="button">🔁 Repetidas</button>
+  </div>
+
+  <p class="tab-info" id="tabInfoCollection">
+    Clique em um código para marcar/desmarcar como obtida.
+  </p>
+  <p class="tab-info dup-info" id="tabInfoDup" style="display:none">
+    Só dá pra marcar repetidas de cartas que você já tem. <strong>Clique esquerdo</strong> = +1 • <strong>Clique direito</strong> = -1
+  </p>
+
+  <div class="table-wrap">
+    <table id="tabela"></table>
+  </div>
+
+  <section class="coffee" aria-label="Apoie o projeto">
+    <h3>☕ Deixe um café</h3>
+    <p>Se este site te ajudou, considere mandar um PIX. Obrigado!</p>
+    <div class="pix-row">
+      <span class="pix-key" id="pixKey">487143e3-3bda-4105-b8a3-e1c1048b5ed5</span>
+      <button type="button" class="copy-btn" id="copyPix">Copiar</button>
+    </div>
+    <div class="qr">
+      <a href="https://nubank.com.br/cobrar/jbiu/69fcc4b3-3a8c-48f3-9f86-3e275f61ef07" target="_blank" rel="noopener">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fnubank.com.br%2Fcobrar%2Fjbiu%2F69fcc4b3-3a8c-48f3-9f86-3e275f61ef07" alt="QR Code PIX Nubank" loading="lazy">
+      </a>
+    </div>
+  </section>
+
+<script>
+  // ===== Definição de times e códigos =====
+  // Cada linha: [prefixo, códigoBandeira (flagcdn), quantidade, prefixoCustom?]
+  const teams = [
+    { prefix: 'MEX', iso: 'mx', count: 20 },
+    { prefix: 'RSA', iso: 'za', count: 20 },
+    { prefix: 'KOR', iso: 'kr', count: 20 },
+    { prefix: 'CZE', iso: 'cz', count: 20 },
+    { prefix: 'CAN', iso: 'ca', count: 20 },
+    { prefix: 'BIH', iso: 'ba', count: 20 },
+    { prefix: 'QAT', iso: 'qa', count: 20 },
+    { prefix: 'SUI', iso: 'ch', count: 20 },
+    { prefix: 'BRA', iso: 'br', count: 20 },
+    { prefix: 'MAR', iso: 'ma', count: 20 },
+    { prefix: 'HAI', iso: 'ht', count: 20 },
+    { prefix: 'SCO', iso: 'gb-sct', count: 20, padTo: 2 },
+    { prefix: 'USA', iso: 'us', count: 20 },
+    { prefix: 'PAR', iso: 'py', count: 20 },
+    { prefix: 'AUS', iso: 'au', count: 20 },
+    { prefix: 'TUR', iso: 'tr', count: 20 },
+    { prefix: 'GER', iso: 'de', count: 20 },
+    { prefix: 'CUW', iso: 'cw', count: 20 },
+    { prefix: 'CIV', iso: 'ci', count: 20 },
+    { prefix: 'ECU', iso: 'ec', count: 20 },
+    { prefix: 'NED', iso: 'nl', count: 20 },
+    { prefix: 'JPN', iso: 'jp', count: 20 },
+    { prefix: 'SWE', iso: 'se', count: 20 },
+    { prefix: 'TUN', iso: 'tn', count: 20 },
+    { prefix: 'BEL', iso: 'be', count: 20 },
+    { prefix: 'EGY', iso: 'eg', count: 20 },
+    { prefix: 'IRN', iso: 'ir', count: 20 },
+    { prefix: 'NZL', iso: 'nz', count: 20 },
+    { prefix: 'ESP', iso: 'es', count: 20 },
+    { prefix: 'CPV', iso: 'cv', count: 20 },
+    { prefix: 'KSA', iso: 'sa', count: 20 },
+    { prefix: 'URU', iso: 'uy', count: 20 },
+    { prefix: 'FRA', iso: 'fr', count: 20 },
+    { prefix: 'SEN', iso: 'sn', count: 20 },
+    { prefix: 'IRQ', iso: 'iq', count: 20 },
+    { prefix: 'NOR', iso: 'no', count: 20 },
+    { prefix: 'ARG', iso: 'ar', count: 20 },
+    { prefix: 'ALG', iso: 'dz', count: 20 },
+    { prefix: 'AUT', iso: 'at', count: 20 },
+    { prefix: 'JOR', iso: 'jo', count: 20 },
+    { prefix: 'POR', iso: 'pt', count: 20 },
+    { prefix: 'COD', iso: 'cd', count: 20, padTo: 2 },
+    { prefix: 'UZB', iso: 'uz', count: 20 },
+    { prefix: 'COL', iso: 'co', count: 20 },
+    { prefix: 'ENG', iso: 'gb-eng', count: 20 },
+    { prefix: 'CRO', iso: 'hr', count: 20, padTo: 2 },
+    { prefix: 'GHA', iso: 'gh', count: 20 },
+    { prefix: 'PAN', iso: 'pa', count: 20 },
+  ];
+
+  // Linhas especiais (FWC topo, FWC base, CC)
+  const specialRows = {
+    fwcTop: { label: 'FWC', codes: ['00', ...Array.from({length: 8}, (_, i) => 'FWC' + (i+1))] },
+    fwcBottom: { label: 'FWC', codes: Array.from({length: 11}, (_, i) => 'FWC' + (i+9)) }, // FWC9..FWC19
+    cc: { label: 'CC', codes: Array.from({length: 14}, (_, i) => 'CC' + (i+1)) },
+  };
+
+  const STORAGE_KEY = 'copa2026_figurinhas_v1';
+  const DUP_STORAGE_KEY = 'copa2026_figurinhas_dup_v1';
+  let owned = new Set();
+  let dups = {}; // { code: count }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) owned = new Set(JSON.parse(raw));
+    } catch(e) { console.warn('Falha ao ler localStorage', e); }
+    try {
+      const rawD = localStorage.getItem(DUP_STORAGE_KEY);
+      if (rawD) {
+        const obj = JSON.parse(rawD);
+        if (obj && typeof obj === 'object') dups = obj;
+      }
+    } catch(e) { console.warn('Falha ao ler dups', e); }
+  }
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([...owned]));
+      localStorage.setItem(DUP_STORAGE_KEY, JSON.stringify(dups));
+    } catch(e) { console.warn('Falha ao salvar localStorage', e); }
+  }
+
+  function pad(n, width) {
+    const s = String(n);
+    return width && s.length < width ? '0'.repeat(width - s.length) + s : s;
+  }
+
+  function buildCodes(team) {
+    const out = [];
+    for (let i = 1; i <= team.count; i++) {
+      out.push(team.prefix + (team.padTo ? pad(i, team.padTo) : i));
+    }
+    return out;
+  }
+
+  function flagCellHTML(team) {
+    if (team.iso) {
+      return `<td class="flag-cell"><img src="https://flagcdn.com/w40/${team.iso}.png" alt="${team.prefix}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'placeholder',textContent:'${team.prefix}'}))"></td>`;
+    }
+    return `<td class="flag-cell"><div class="placeholder">${team.prefix}</div></td>`;
+  }
+
+  function specialFlagCellHTML(label) {
+    return `<td class="flag-cell"><div class="placeholder">${label}</div></td>`;
+  }
+
+  function rowHTML(flagHTML, codes) {
+    const cells = codes.map(code => cellHTML(code)).join('');
+    return `<tr>${flagHTML}${cells}</tr>`;
+  }
+
+  function cellHTML(code) {
+    const got = owned.has(code) ? ' got' : '';
+    const qty = dups[code] || 0;
+    const hasDup = qty > 0 ? ' has-dup' : '';
+    const badge = qty > 0 ? `<span class="dup-badge">${qty}</span>` : '';
+    return `<td class="code${got}${hasDup}" data-code="${code}">${code}${badge}</td>`;
+  }
+
+  function specialHeaderRow(codes) {
+    // First cell is the FWC label box, rest are header codes shown in yellow style
+    const cells = codes.map((code, i) => {
+      if (i === 0) return ''; // handled outside
+      return `<td class="code${owned.has(code) ? ' got' : ''}" data-code="${code}">${code}</td>`;
+    });
+    return cells;
+  }
+
+  function render() {
+    const table = document.getElementById('tabela');
+    const parts = [];
+
+    // Linha topo FWC
+    {
+      const codes = specialRows.fwcTop.codes;
+      const cells = codes.map(c => cellHTML(c)).join('');
+      parts.push(`<tr>${specialFlagCellHTML('FWC')}${cells}</tr>`);
+    }
+
+    // Times
+    for (const team of teams) {
+      parts.push(rowHTML(flagCellHTML(team), buildCodes(team)));
+    }
+
+    // Linha FWC base + CC
+    {
+      const codes = specialRows.fwcBottom.codes;
+      const cells = codes.map(c => cellHTML(c)).join('');
+      parts.push(`<tr>${specialFlagCellHTML('FWC')}${cells}</tr>`);
+    }
+    {
+      const codes = specialRows.cc.codes;
+      const cells = codes.map(c => cellHTML(c)).join('');
+      parts.push(`<tr>${specialFlagCellHTML('CC')}${cells}</tr>`);
+    }
+
+    table.innerHTML = parts.join('');
+    updateStat();
+  }
+
+  function totalCodes() {
+    let total = 0;
+    total += specialRows.fwcTop.codes.length;
+    total += specialRows.fwcBottom.codes.length;
+    total += specialRows.cc.codes.length;
+    for (const t of teams) total += t.count;
+    return total;
+  }
+
+  function updateStat() {
+    const total = totalCodes();
+    document.getElementById('stat').textContent = `Obtidas: ${owned.size} / ${total}`;
+    const dupTotal = Object.values(dups).reduce((a, b) => a + b, 0);
+    const dupEl = document.getElementById('dupStat');
+    if (dupEl) dupEl.textContent = `Repetidas: ${dupTotal}`;
+  }
+
+  function updateCellBadge(code) {
+    const td = document.querySelector(`td.code[data-code="${code}"]`);
+    if (!td) return;
+    const existing = td.querySelector('.dup-badge');
+    const qty = dups[code] || 0;
+    if (qty > 0) {
+      td.classList.add('has-dup');
+      if (existing) existing.textContent = qty;
+      else {
+        const span = document.createElement('span');
+        span.className = 'dup-badge';
+        span.textContent = qty;
+        td.appendChild(span);
+      }
+    } else {
+      td.classList.remove('has-dup');
+      if (existing) existing.remove();
+    }
+  }
+
+  function changeDup(code, delta) {
+    if (!owned.has(code)) return; // só permite repetida se a carta foi obtida
+    const cur = dups[code] || 0;
+    const next = Math.max(0, cur + delta);
+    if (next === 0) delete dups[code];
+    else dups[code] = next;
+    updateCellBadge(code);
+    saveState();
+    updateStat();
+  }
+
+  // ===== Abas (modos) =====
+  let mode = 'collection'; // 'collection' | 'dup'
+  function setMode(newMode) {
+    mode = newMode;
+    document.body.classList.toggle('mode-dup', mode === 'dup');
+    document.getElementById('tabCollection').classList.toggle('active', mode === 'collection');
+    document.getElementById('tabDup').classList.toggle('active', mode === 'dup');
+    document.getElementById('tabCollection').setAttribute('aria-selected', mode === 'collection');
+    document.getElementById('tabDup').setAttribute('aria-selected', mode === 'dup');
+    document.getElementById('tabInfoCollection').style.display = mode === 'collection' ? 'block' : 'none';
+    document.getElementById('tabInfoDup').style.display = mode === 'dup' ? 'block' : 'none';
+  }
+  document.getElementById('tabCollection').addEventListener('click', () => setMode('collection'));
+  document.getElementById('tabDup').addEventListener('click', () => setMode('dup'));
+
+  document.addEventListener('click', (e) => {
+    const td = e.target.closest('td.code');
+    if (!td) return;
+    const code = td.dataset.code;
+    if (mode === 'collection') {
+      if (owned.has(code)) {
+        owned.delete(code);
+        td.classList.remove('got');
+        // se desmarcar como obtida, zera repetidas também
+        if (dups[code]) {
+          delete dups[code];
+          updateCellBadge(code);
+        }
+      } else {
+        owned.add(code);
+        td.classList.add('got');
+      }
+      saveState();
+      updateStat();
+    } else {
+      // modo repetidas: só funciona em obtidas
+      if (!owned.has(code)) return;
+      changeDup(code, 1);
+    }
+  });
+
+  document.addEventListener('contextmenu', (e) => {
+    const td = e.target.closest('td.code');
+    if (!td) return;
+    if (mode !== 'dup') return; // clique direito só age na aba Repetidas
+    e.preventDefault();
+    const code = td.dataset.code;
+    if (!owned.has(code)) return;
+    changeDup(code, -1);
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    if (!confirm('Tem certeza que deseja apagar TODAS as marcações (obtidas e repetidas)?')) return;
+    owned.clear();
+    dups = {};
+    saveState();
+    render();
+  });
+
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    const data = JSON.stringify({ owned: [...owned], dups }, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'figurinhas-copa-2026.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('importBtn').addEventListener('click', () => {
+    document.getElementById('importFile').click();
+  });
+  document.getElementById('importFile').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const parsed = JSON.parse(ev.target.result);
+        // Compatibilidade: pode vir um array antigo (só owned) ou objeto novo
+        if (Array.isArray(parsed)) {
+          owned = new Set(parsed.filter(x => typeof x === 'string'));
+          dups = {};
+        } else if (parsed && typeof parsed === 'object') {
+          owned = new Set((parsed.owned || []).filter(x => typeof x === 'string'));
+          dups = {};
+          if (parsed.dups && typeof parsed.dups === 'object') {
+            for (const [k, v] of Object.entries(parsed.dups)) {
+              const n = parseInt(v, 10);
+              if (typeof k === 'string' && Number.isFinite(n) && n > 0) dups[k] = n;
+            }
+          }
+        } else {
+          throw new Error('Formato inválido');
+        }
+        saveState();
+        render();
+        alert('Importado com sucesso!');
+      } catch (err) {
+        alert('Arquivo inválido: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  loadState();
+  render();
+  setMode('collection');
+
+  // ===== Botão copiar lista de repetidas =====
+  document.getElementById('copyDupBtn').addEventListener('click', async () => {
+    const entries = Object.entries(dups).sort((a, b) => a[0].localeCompare(b[0], 'pt-BR', { numeric: true }));
+    if (entries.length === 0) { alert('Você ainda não tem nenhuma figurinha repetida.'); return; }
+    const text = entries.map(([c, q]) => `${c} (x${q})`).join(', ');
+    const btn = document.getElementById('copyDupBtn');
+    try {
+      await navigator.clipboard.writeText(text);
+      const old = btn.textContent;
+      btn.textContent = 'Copiado!';
+      setTimeout(() => { btn.textContent = old; }, 1500);
+    } catch {
+      prompt('Copie a lista abaixo:', text);
+    }
+  });
+
+  // ===== Botão copiar PIX =====
+  const copyBtn = document.getElementById('copyPix');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', async () => {
+      const key = document.getElementById('pixKey').textContent.trim();
+      try {
+        await navigator.clipboard.writeText(key);
+        const old = copyBtn.textContent;
+        copyBtn.textContent = 'Copiado!';
+        setTimeout(() => { copyBtn.textContent = old; }, 1500);
+      } catch {
+        alert('Não foi possível copiar. Selecione manualmente.');
+      }
+    });
+  }
+</script>
+</body>
+</html>

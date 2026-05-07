@@ -1,0 +1,10 @@
+# SO / editores
+Thumbs.db
+.DS_Store
+.vscode/
+
+# Logs
+*.log
+
+# Backups locais
+*.bak
