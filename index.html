@@ -29,54 +29,102 @@
       url('bgCUp.png') center center / cover no-repeat fixed,
       #0a7a3b;
   }
+  /* iOS/Android: background-attachment fixed causa lag, troca para scroll */
+  @media (max-width: 900px), (hover: none) {
+    body {
+      background:
+        linear-gradient(135deg, rgba(10,122,59,0.82), rgba(22,163,74,0.78) 60%, rgba(34,197,94,0.82)),
+        url('bgCUp.png') center center / cover no-repeat scroll,
+        #0a7a3b;
+    }
+  }
   header {
     text-align: center;
-    padding: 20px 16px 10px;
+    padding: 16px 16px 8px;
   }
   header h1 {
     margin: 0;
-    font-size: clamp(20px, 3.2vw, 34px);
+    font-size: clamp(18px, 3.2vw, 32px);
     letter-spacing: 1px;
     text-transform: uppercase;
     text-shadow: 2px 2px 0 rgba(0,0,0,0.25);
   }
   header p {
     margin: 6px 0 0;
-    font-size: clamp(12px, 1.6vw, 16px);
+    font-size: clamp(12px, 1.6vw, 15px);
     opacity: 0.95;
+  }
+
+  .sticky-bar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: linear-gradient(180deg, rgba(6,78,37,0.96), rgba(6,78,37,0.92));
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    padding-top: 6px;
   }
   .toolbar {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     flex-wrap: wrap;
-    padding: 10px 16px 18px;
+    padding: 8px 12px 10px;
   }
   .toolbar .stat {
-    background: rgba(0,0,0,0.25);
-    padding: 8px 14px;
+    background: rgba(0,0,0,0.35);
+    padding: 7px 12px;
     border-radius: 20px;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 13px;
   }
   .toolbar button {
     background: #fde047;
     color: #1a1a1a;
     border: none;
-    padding: 8px 16px;
+    padding: 8px 14px;
     border-radius: 20px;
     cursor: pointer;
     font-weight: 700;
     font-size: 13px;
     transition: transform 0.1s, box-shadow 0.1s;
+    min-height: 38px;
   }
   .toolbar button:hover { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,0.3); }
   .toolbar button.danger { background: #ef4444; color: #fff; }
 
+  /* Barra de progresso */
+  .progress-wrap {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 0 16px 8px;
+  }
+  .progress {
+    height: 10px;
+    background: rgba(0,0,0,0.4);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+  }
+  .progress > .fill {
+    height: 100%;
+    background: linear-gradient(90deg, #fde047, #fbbf24);
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+  .progress-label {
+    text-align: center;
+    font-size: 11px;
+    margin-top: 3px;
+    opacity: 0.9;
+  }
+
   .table-wrap {
     overflow-x: auto;
     padding: 0 12px 40px;
+    -webkit-overflow-scrolling: touch;
   }
   table {
     margin: 0 auto;
@@ -94,10 +142,13 @@
     padding: 6px 4px;
     min-width: 46px;
     user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
     transition: background 0.15s, color 0.15s, transform 0.1s;
   }
   td.code {
     cursor: pointer;
+    touch-action: manipulation;
   }
   td.code:hover {
     background: #1a8e4a;
@@ -199,6 +250,10 @@
     padding: 4px;
     min-width: 50px;
     width: 50px;
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    box-shadow: 2px 0 4px rgba(0,0,0,0.2);
   }
   td.flag-cell img {
     width: 36px;
@@ -293,9 +348,49 @@
   .coffee .qr img { display: block; width: 160px; height: 160px; }
 
   @media (max-width: 600px) {
-    td { font-size: 10px; min-width: 40px; padding: 5px 2px; }
-    td.flag-cell img { width: 28px; height: 19px; }
+    td {
+      font-size: 11px;
+      min-width: 44px;
+      padding: 8px 3px;
+    }
+    td.flag-cell { min-width: 42px; width: 42px; padding: 3px; }
+    td.flag-cell img { width: 30px; height: 20px; }
+    td.flag-cell .placeholder { width: 30px; height: 20px; font-size: 8px; }
+    .tab { padding: 8px 16px; font-size: 13px; }
+    .toolbar { gap: 6px; }
+    .toolbar .stat, .toolbar button { font-size: 12px; padding: 7px 10px; }
+    header h1 { font-size: 18px; }
+    header p { font-size: 11px; }
+    .coffee { margin: 24px 12px 10px; }
+    .coffee .qr img { width: 140px; height: 140px; }
   }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: #1a1a1a;
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 24px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    z-index: 200;
+    opacity: 0;
+    transition: transform 0.25s, opacity 0.25s;
+    pointer-events: none;
+    max-width: 90vw;
+    text-align: center;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  .toast.error { background: #b91c1c; }
+  .toast.success { background: #15803d; }
 </style>
 </head>
 <body>
@@ -304,31 +399,41 @@
     <p>Álbum Panini 2026 • Clique em um código para marcar como obtido</p>
   </header>
 
-  <div class="toolbar">
-    <div class="stat" id="stat">Obtidas: 0 / 0</div>
-    <div class="stat" id="dupStat" title="Total de figurinhas repetidas">Repetidas: 0</div>
-    <button id="copyDupBtn" type="button">Copiar lista de repetidas</button>
-    <button id="exportBtn" type="button">Exportar</button>
-    <button id="importBtn" type="button">Importar</button>
-    <button id="resetBtn" class="danger" type="button">Limpar tudo</button>
-    <input type="file" id="importFile" accept="application/json" hidden />
-  </div>
+  <div class="sticky-bar">
+    <div class="toolbar">
+      <div class="stat" id="stat">Obtidas: 0 / 0</div>
+      <div class="stat" id="dupStat" title="Total de figurinhas repetidas">Repetidas: 0</div>
+      <button id="copyDupBtn" type="button">Copiar repetidas</button>
+      <button id="exportBtn" type="button">Exportar</button>
+      <button id="importBtn" type="button">Importar</button>
+      <button id="resetBtn" class="danger" type="button">Limpar</button>
+      <input type="file" id="importFile" accept="application/json" hidden />
+    </div>
 
-  <div class="tabs" role="tablist">
-    <button class="tab active" id="tabCollection" role="tab" aria-selected="true" type="button">📋 Coleção</button>
-    <button class="tab" id="tabDup" role="tab" aria-selected="false" type="button">🔁 Repetidas</button>
+    <div class="progress-wrap">
+      <div class="progress"><div class="fill" id="progressFill"></div></div>
+      <div class="progress-label" id="progressLabel">0%</div>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab active" id="tabCollection" role="tab" aria-selected="true" type="button">📋 Coleção</button>
+      <button class="tab" id="tabDup" role="tab" aria-selected="false" type="button">🔁 Repetidas</button>
+    </div>
   </div>
 
   <p class="tab-info" id="tabInfoCollection">
-    Clique em um código para marcar/desmarcar como obtida.
+    Toque/clique em um código para marcar/desmarcar como obtida.
   </p>
   <p class="tab-info dup-info" id="tabInfoDup" style="display:none">
-    Só dá pra marcar repetidas de cartas que você já tem. <strong>Clique esquerdo</strong> = +1 • <strong>Clique direito</strong> = -1
+    Só dá pra marcar repetidas de cartas que você já tem.<br>
+    <strong>Toque/clique</strong> = +1 • <strong>Toque longo</strong> (ou clique direito) = -1
   </p>
 
   <div class="table-wrap">
     <table id="tabela"></table>
   </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <section class="coffee" aria-label="Apoie o projeto">
     <h3>☕ Deixe um café</h3>
@@ -523,6 +628,21 @@
     const dupTotal = Object.values(dups).reduce((a, b) => a + b, 0);
     const dupEl = document.getElementById('dupStat');
     if (dupEl) dupEl.textContent = `Repetidas: ${dupTotal}`;
+    const pct = total > 0 ? (owned.size / total) * 100 : 0;
+    const fill = document.getElementById('progressFill');
+    const lbl = document.getElementById('progressLabel');
+    if (fill) fill.style.width = pct.toFixed(1) + '%';
+    if (lbl) lbl.textContent = pct.toFixed(1) + '%';
+  }
+
+  // ===== Toast =====
+  let toastTimer = null;
+  function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (type ? ' ' + type : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.classList.remove('show'); }, 2200);
   }
 
   function updateCellBadge(code) {
@@ -574,6 +694,7 @@
   document.addEventListener('click', (e) => {
     const td = e.target.closest('td.code');
     if (!td) return;
+    if (suppressNextClick) { suppressNextClick = false; return; }
     const code = td.dataset.code;
     if (mode === 'collection') {
       if (owned.has(code)) {
@@ -592,7 +713,10 @@
       updateStat();
     } else {
       // modo repetidas: só funciona em obtidas
-      if (!owned.has(code)) return;
+      if (!owned.has(code)) {
+        showToast('Marque como obtida antes de adicionar repetida', 'error');
+        return;
+      }
       changeDup(code, 1);
     }
   });
@@ -606,6 +730,35 @@
     if (!owned.has(code)) return;
     changeDup(code, -1);
   });
+
+  // ===== Toque longo (mobile) para -1 repetida =====
+  let longPressTimer = null;
+  let longPressTarget = null;
+  let suppressNextClick = false;
+  const LONG_PRESS_MS = 500;
+
+  function clearLongPress() {
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+    longPressTarget = null;
+  }
+
+  document.addEventListener('touchstart', (e) => {
+    if (mode !== 'dup') return;
+    const td = e.target.closest('td.code');
+    if (!td) return;
+    const code = td.dataset.code;
+    if (!owned.has(code)) return;
+    longPressTarget = td;
+    longPressTimer = setTimeout(() => {
+      changeDup(code, -1);
+      suppressNextClick = true;
+      if (navigator.vibrate) navigator.vibrate(40);
+      longPressTimer = null;
+    }, LONG_PRESS_MS);
+  }, { passive: true });
+  document.addEventListener('touchend', clearLongPress, { passive: true });
+  document.addEventListener('touchmove', clearLongPress, { passive: true });
+  document.addEventListener('touchcancel', clearLongPress, { passive: true });
 
   document.getElementById('resetBtn').addEventListener('click', () => {
     if (!confirm('Tem certeza que deseja apagar TODAS as marcações (obtidas e repetidas)?')) return;
@@ -654,9 +807,9 @@
         }
         saveState();
         render();
-        alert('Importado com sucesso!');
+        showToast('Importado com sucesso!', 'success');
       } catch (err) {
-        alert('Arquivo inválido: ' + err.message);
+        showToast('Arquivo inválido: ' + err.message, 'error');
       }
     };
     reader.readAsText(file);
@@ -670,14 +823,11 @@
   // ===== Botão copiar lista de repetidas =====
   document.getElementById('copyDupBtn').addEventListener('click', async () => {
     const entries = Object.entries(dups).sort((a, b) => a[0].localeCompare(b[0], 'pt-BR', { numeric: true }));
-    if (entries.length === 0) { alert('Você ainda não tem nenhuma figurinha repetida.'); return; }
+    if (entries.length === 0) { showToast('Você ainda não tem repetidas', 'error'); return; }
     const text = entries.map(([c, q]) => `${c} (x${q})`).join(', ');
-    const btn = document.getElementById('copyDupBtn');
     try {
       await navigator.clipboard.writeText(text);
-      const old = btn.textContent;
-      btn.textContent = 'Copiado!';
-      setTimeout(() => { btn.textContent = old; }, 1500);
+      showToast('Lista de repetidas copiada!', 'success');
     } catch {
       prompt('Copie a lista abaixo:', text);
     }
@@ -690,11 +840,9 @@
       const key = document.getElementById('pixKey').textContent.trim();
       try {
         await navigator.clipboard.writeText(key);
-        const old = copyBtn.textContent;
-        copyBtn.textContent = 'Copiado!';
-        setTimeout(() => { copyBtn.textContent = old; }, 1500);
+        showToast('Chave PIX copiada!', 'success');
       } catch {
-        alert('Não foi possível copiar. Selecione manualmente.');
+        showToast('Não foi possível copiar', 'error');
       }
     });
   }
