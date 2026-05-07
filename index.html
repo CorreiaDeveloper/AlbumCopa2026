@@ -503,9 +503,9 @@
     { prefix: 'PAN', iso: 'pa', count: 20 },
   ];
 
-  // Linha especial única: FWC1..FWC20 (no final)
+  // Linha especial única: 00, FWC1..FWC19 (no final)
   const specialRows = {
-    fwc: { label: 'FWC', codes: Array.from({length: 20}, (_, i) => 'FWC' + (i+1)) },
+    fwc: { label: 'FWC', codes: ['00', ...Array.from({length: 19}, (_, i) => 'FWC' + (i+1))] },
   };
 
   const STORAGE_KEY = 'copa2026_figurinhas_v1';
