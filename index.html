@@ -2,7 +2,11 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#064e25" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="mobile-web-app-capable" content="yes" />
 <title>Tabela de Controle de Figurinhas — Copa 2026</title>
 <style>
   :root {
@@ -28,6 +32,7 @@
       linear-gradient(135deg, rgba(10,122,59,0.78), rgba(22,163,74,0.72) 60%, rgba(34,197,94,0.78)),
       url('bgCUp.png') center center / cover no-repeat fixed,
       #0a7a3b;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
   /* iOS/Android: background-attachment fixed causa lag, troca para scroll */
   @media (max-width: 900px), (hover: none) {
@@ -391,6 +396,100 @@
   }
   .toast.error { background: #b91c1c; }
   .toast.success { background: #15803d; }
+
+  /* Campo de busca */
+  .search-wrap {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 0 16px 8px;
+    position: relative;
+  }
+  .search-wrap input {
+    width: 100%;
+    padding: 10px 36px 10px 38px;
+    border-radius: 22px;
+    border: none;
+    background: rgba(255,255,255,0.95);
+    color: #1a1a1a;
+    font-size: 14px;
+    font-weight: 600;
+    outline: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  }
+  .search-wrap input:focus {
+    box-shadow: 0 0 0 3px rgba(253,224,71,0.6);
+  }
+  .search-wrap .search-icon {
+    position: absolute;
+    left: 28px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    opacity: 0.6;
+    font-size: 14px;
+  }
+  .search-wrap .clear-btn {
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #6b7280;
+    color: #fff;
+    border: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  .search-wrap .clear-btn.show { display: flex; }
+
+  /* Linhas escondidas pelo filtro */
+  tr.filtered-out { display: none; }
+
+  /* Animação pop ao marcar */
+  @keyframes pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.18); }
+    100% { transform: scale(1); }
+  }
+  td.code.pop { animation: pop 0.22s ease; }
+
+  /* Botão voltar ao topo */
+  .scroll-top {
+    position: fixed;
+    right: 14px;
+    bottom: calc(14px + env(safe-area-inset-bottom));
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: #fde047;
+    color: #1a1a1a;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    font-size: 22px;
+    font-weight: 800;
+    cursor: pointer;
+    z-index: 150;
+    opacity: 0;
+    transform: translateY(20px);
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+  .scroll-top.show {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  @media (max-width: 600px) {
+    .scroll-top { width: 42px; height: 42px; font-size: 20px; }
+  }
 </style>
 </head>
 <body>
@@ -403,7 +502,9 @@
     <div class="toolbar">
       <div class="stat" id="stat">Obtidas: 0 / 0</div>
       <div class="stat" id="dupStat" title="Total de figurinhas repetidas">Repetidas: 0</div>
+      <div class="stat" id="missStat" title="Total de figurinhas faltantes">Faltantes: 0</div>
       <button id="copyDupBtn" type="button">Copiar repetidas</button>
+      <button id="copyMissBtn" type="button">Copiar faltantes</button>
       <button id="exportBtn" type="button">Exportar</button>
       <button id="importBtn" type="button">Importar</button>
       <button id="resetBtn" class="danger" type="button">Limpar</button>
@@ -415,6 +516,13 @@
       <div class="progress-label" id="progressLabel">0%</div>
     </div>
 
+    <div class="search-wrap">
+      <span class="search-icon">🔎</span>
+      <input id="searchInput" type="search" inputmode="search" autocomplete="off"
+             placeholder="Buscar país ou código (ex.: BRA, ARG, FWC)" aria-label="Buscar país ou código" />
+      <button type="button" class="clear-btn" id="clearSearch" aria-label="Limpar busca">×</button>
+    </div>
+
     <div class="tabs" role="tablist">
       <button class="tab active" id="tabCollection" role="tab" aria-selected="true" type="button">📋 Coleção</button>
       <button class="tab" id="tabDup" role="tab" aria-selected="false" type="button">🔁 Repetidas</button>
@@ -422,7 +530,7 @@
   </div>
 
   <p class="tab-info" id="tabInfoCollection">
-    Toque/clique em um código para marcar/desmarcar como obtida.
+    Toque para marcar/desmarcar. <strong>Toque longo</strong> em obtidas adiciona repetida (+1).
   </p>
   <p class="tab-info dup-info" id="tabInfoDup" style="display:none">
     Só dá pra marcar repetidas de cartas que você já tem.<br>
@@ -434,6 +542,8 @@
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <button type="button" id="scrollTopBtn" class="scroll-top" aria-label="Voltar ao topo">↑</button>
 
   <section class="coffee" aria-label="Apoie o projeto">
     <h3>☕ Deixe um café</h3>
@@ -464,7 +574,7 @@
     { prefix: 'BRA', iso: 'br', count: 20 },
     { prefix: 'MAR', iso: 'ma', count: 20 },
     { prefix: 'HAI', iso: 'ht', count: 20 },
-    { prefix: 'SCO', iso: 'gb-sct', count: 20, padTo: 2 },
+    { prefix: 'SCO', iso: 'gb-sct', count: 20 },
     { prefix: 'USA', iso: 'us', count: 20 },
     { prefix: 'PAR', iso: 'py', count: 20 },
     { prefix: 'AUS', iso: 'au', count: 20 },
@@ -494,11 +604,11 @@
     { prefix: 'AUT', iso: 'at', count: 20 },
     { prefix: 'JOR', iso: 'jo', count: 20 },
     { prefix: 'POR', iso: 'pt', count: 20 },
-    { prefix: 'COD', iso: 'cd', count: 20, padTo: 2 },
+    { prefix: 'COD', iso: 'cd', count: 20 },
     { prefix: 'UZB', iso: 'uz', count: 20 },
     { prefix: 'COL', iso: 'co', count: 20 },
     { prefix: 'ENG', iso: 'gb-eng', count: 20 },
-    { prefix: 'CRO', iso: 'hr', count: 20, padTo: 2 },
+    { prefix: 'CRO', iso: 'hr', count: 20 },
     { prefix: 'GHA', iso: 'gh', count: 20 },
     { prefix: 'PAN', iso: 'pa', count: 20 },
   ];
@@ -525,6 +635,28 @@
         if (obj && typeof obj === 'object') dups = obj;
       }
     } catch(e) { console.warn('Falha ao ler dups', e); }
+
+    // Migração: SCO/COD/CRO antes tinham padTo:2 (ex.: SCO01..SCO09).
+    // Agora usam o mesmo formato dos demais (SCO1..SCO9). Converte códigos antigos.
+    const migratePrefixes = ['SCO', 'COD', 'CRO'];
+    const migrateCode = (c) => {
+      for (const p of migratePrefixes) {
+        if (c.startsWith(p)) {
+          const num = c.slice(p.length);
+          if (/^0\d$/.test(num)) return p + String(parseInt(num, 10));
+        }
+      }
+      return c;
+    };
+    const newOwned = new Set();
+    for (const code of owned) newOwned.add(migrateCode(code));
+    owned = newOwned;
+    const newDups = {};
+    for (const [code, count] of Object.entries(dups)) {
+      const nc = migrateCode(code);
+      newDups[nc] = (newDups[nc] || 0) + count;
+    }
+    dups = newDups;
 
     // Limpa códigos obsoletos (CC*, '00', FWC>20)
     const valid = new Set(allValidCodes());
@@ -569,9 +701,9 @@
     return `<td class="flag-cell"><div class="placeholder">${label}</div></td>`;
   }
 
-  function rowHTML(flagHTML, codes) {
+  function rowHTML(flagHTML, codes, prefix) {
     const cells = codes.map(code => cellHTML(code)).join('');
-    return `<tr>${flagHTML}${cells}</tr>`;
+    return `<tr data-prefix="${prefix}">${flagHTML}${cells}</tr>`;
   }
 
   function cellHTML(code) {
@@ -597,14 +729,14 @@
 
     // Times
     for (const team of teams) {
-      parts.push(rowHTML(flagCellHTML(team), buildCodes(team)));
+      parts.push(rowHTML(flagCellHTML(team), buildCodes(team), team.prefix));
     }
 
     // Linha FWC final (FWC1..FWC20)
     {
       const codes = specialRows.fwc.codes;
       const cells = codes.map(c => cellHTML(c)).join('');
-      parts.push(`<tr>${specialFlagCellHTML('FWC')}${cells}</tr>`);
+      parts.push(`<tr data-prefix="FWC">${specialFlagCellHTML('FWC')}${cells}</tr>`);
     }
 
     table.innerHTML = parts.join('');
@@ -623,6 +755,8 @@
     const dupTotal = Object.values(dups).reduce((a, b) => a + b, 0);
     const dupEl = document.getElementById('dupStat');
     if (dupEl) dupEl.textContent = `Repetidas: ${dupTotal}`;
+    const missEl = document.getElementById('missStat');
+    if (missEl) missEl.textContent = `Faltantes: ${total - owned.size}`;
     const pct = total > 0 ? (owned.size / total) * 100 : 0;
     const fill = document.getElementById('progressFill');
     const lbl = document.getElementById('progressLabel');
@@ -703,7 +837,9 @@
       } else {
         owned.add(code);
         td.classList.add('got');
+        if (navigator.vibrate) navigator.vibrate(15);
       }
+      popCell(td);
       saveState();
       updateStat();
     } else {
@@ -713,6 +849,8 @@
         return;
       }
       changeDup(code, 1);
+      popCell(td);
+      if (navigator.vibrate) navigator.vibrate(15);
     }
   });
 
@@ -726,7 +864,9 @@
     changeDup(code, -1);
   });
 
-  // ===== Toque longo (mobile) para -1 repetida =====
+  // ===== Toque longo (mobile) =====
+  // - aba Repetidas: -1 na quantidade
+  // - aba Coleção: +1 repetida (atalho rápido sem trocar de aba)
   let longPressTimer = null;
   let longPressTarget = null;
   let suppressNextClick = false;
@@ -737,15 +877,29 @@
     longPressTarget = null;
   }
 
+  function popCell(td) {
+    if (!td) return;
+    td.classList.remove('pop');
+    // força reflow para reiniciar animação
+    void td.offsetWidth;
+    td.classList.add('pop');
+  }
+
   document.addEventListener('touchstart', (e) => {
-    if (mode !== 'dup') return;
     const td = e.target.closest('td.code');
     if (!td) return;
     const code = td.dataset.code;
     if (!owned.has(code)) return;
     longPressTarget = td;
     longPressTimer = setTimeout(() => {
-      changeDup(code, -1);
+      if (mode === 'dup') {
+        changeDup(code, -1);
+      } else {
+        // atalho na aba Coleção: +1 repetida
+        changeDup(code, 1);
+        showToast(`Repetida +1 (${code})`, 'success');
+      }
+      popCell(td);
       suppressNextClick = true;
       if (navigator.vibrate) navigator.vibrate(40);
       longPressTimer = null;
@@ -828,6 +982,20 @@
     }
   });
 
+  // ===== Botão copiar lista de faltantes =====
+  document.getElementById('copyMissBtn').addEventListener('click', async () => {
+    const missing = allValidCodes().filter(c => !owned.has(c));
+    if (missing.length === 0) { showToast('Você não tem faltantes!', 'success'); return; }
+    missing.sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
+    const text = missing.join(', ');
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('Lista de faltantes copiada!', 'success');
+    } catch {
+      prompt('Copie a lista abaixo:', text);
+    }
+  });
+
   // ===== Botão copiar PIX =====
   const copyBtn = document.getElementById('copyPix');
   if (copyBtn) {
@@ -841,6 +1009,51 @@
       }
     });
   }
+
+  // ===== Filtro de busca por país/código =====
+  const searchInput = document.getElementById('searchInput');
+  const clearSearchBtn = document.getElementById('clearSearch');
+  function applyFilter() {
+    const q = (searchInput.value || '').trim().toUpperCase();
+    clearSearchBtn.classList.toggle('show', q.length > 0);
+    const rows = document.querySelectorAll('#tabela tr');
+    if (!q) {
+      rows.forEach(r => r.classList.remove('filtered-out'));
+      return;
+    }
+    rows.forEach(r => {
+      const prefix = (r.dataset.prefix || '').toUpperCase();
+      // Mostra a linha se o prefixo (país) começa com q OU se algum código contém q
+      let match = prefix.includes(q);
+      if (!match) {
+        const codes = r.querySelectorAll('td.code');
+        for (const c of codes) {
+          if ((c.dataset.code || '').toUpperCase().includes(q)) { match = true; break; }
+        }
+      }
+      r.classList.toggle('filtered-out', !match);
+    });
+  }
+  searchInput.addEventListener('input', applyFilter);
+  clearSearchBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    applyFilter();
+    searchInput.focus();
+  });
+
+  // ===== Botão voltar ao topo =====
+  const scrollTopBtn = document.getElementById('scrollTopBtn');
+  let scrollRaf = 0;
+  window.addEventListener('scroll', () => {
+    if (scrollRaf) return;
+    scrollRaf = requestAnimationFrame(() => {
+      scrollRaf = 0;
+      scrollTopBtn.classList.toggle('show', window.scrollY > 400);
+    });
+  }, { passive: true });
+  scrollTopBtn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
 </script>
 
 <!-- GoatCounter analytics -->
