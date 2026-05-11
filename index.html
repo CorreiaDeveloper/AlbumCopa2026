@@ -670,6 +670,20 @@
     list.push(...specialRows.fwc.codes);
     return list;
   }
+
+  // Mapa: código -> índice na ordem do álbum (MEX, RSA, KOR, ...)
+  let _albumOrder = null;
+  function albumIndex(code) {
+    if (!_albumOrder) {
+      _albumOrder = new Map();
+      allValidCodes().forEach((c, i) => _albumOrder.set(c, i));
+    }
+    const v = _albumOrder.get(code);
+    return v === undefined ? Number.MAX_SAFE_INTEGER : v;
+  }
+  function compareAlbum(a, b) {
+    return albumIndex(a) - albumIndex(b);
+  }
   function saveState() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify([...owned]));
@@ -971,7 +985,7 @@
 
   // ===== Botão copiar lista de repetidas =====
   document.getElementById('copyDupBtn').addEventListener('click', async () => {
-    const entries = Object.entries(dups).sort((a, b) => a[0].localeCompare(b[0], 'pt-BR', { numeric: true }));
+    const entries = Object.entries(dups).sort((a, b) => compareAlbum(a[0], b[0]));
     if (entries.length === 0) { showToast('Você ainda não tem repetidas', 'error'); return; }
     const text = entries.map(([c, q]) => `${c} (x${q})`).join(', ');
     try {
@@ -986,7 +1000,7 @@
   document.getElementById('copyMissBtn').addEventListener('click', async () => {
     const missing = allValidCodes().filter(c => !owned.has(c));
     if (missing.length === 0) { showToast('Você não tem faltantes!', 'success'); return; }
-    missing.sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
+    missing.sort(compareAlbum);
     const text = missing.join(', ');
     try {
       await navigator.clipboard.writeText(text);
