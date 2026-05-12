@@ -666,6 +666,10 @@
     100% { transform: scale(1); }
   }
   td.code.pop { animation: pop 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+  /* Sem animação pop em touch para resposta instantânea */
+  @media (hover: none) {
+    td.code.pop { animation: none; }
+  }
 
   /* ============ RESPONSIVE ============ */
   @media (max-width: 600px) {
@@ -890,6 +894,18 @@
     } catch(e) { console.warn('Falha ao salvar localStorage', e); }
   }
 
+  // Save debounced (não bloqueia o tap)
+  let saveTimer = 0;
+  function scheduleSave() {
+    if (saveTimer) return;
+    const cb = () => { saveTimer = 0; saveState(); };
+    saveTimer = (window.requestIdleCallback)
+      ? requestIdleCallback(cb, { timeout: 800 })
+      : setTimeout(cb, 250);
+  }
+  window.addEventListener('pagehide', () => { if (saveTimer) saveState(); });
+  window.addEventListener('beforeunload', () => { if (saveTimer) saveState(); });
+
   function pad(n, width) {
     const s = String(n);
     return width && s.length < width ? '0'.repeat(width - s.length) + s : s;
@@ -1014,7 +1030,7 @@
     if (next === 0) delete dups[code];
     else dups[code] = next;
     updateCellBadge(code);
-    saveState();
+    scheduleSave();
     updateStat();
   }
 
@@ -1033,16 +1049,14 @@
   document.getElementById('tabCollection').addEventListener('click', () => setMode('collection'));
   document.getElementById('tabDup').addEventListener('click', () => setMode('dup'));
 
-  document.addEventListener('click', (e) => {
-    const td = e.target.closest('td.code');
-    if (!td) return;
+  // Handler unificado para tap (pointerup) ou click (mouse/teclado)
+  function handleCellActivate(td) {
     if (suppressNextClick) { suppressNextClick = false; return; }
     const code = td.dataset.code;
     if (mode === 'collection') {
       if (owned.has(code)) {
         owned.delete(code);
         td.classList.remove('got');
-        // se desmarcar como obtida, zera repetidas também
         if (dups[code]) {
           delete dups[code];
           updateCellBadge(code);
@@ -1050,21 +1064,58 @@
       } else {
         owned.add(code);
         td.classList.add('got');
-        if (navigator.vibrate) navigator.vibrate(15);
+        if (navigator.vibrate) navigator.vibrate(10);
       }
       popCell(td);
-      saveState();
+      scheduleSave();
       updateStat();
     } else {
-      // modo repetidas: só funciona em obtidas
       if (!owned.has(code)) {
         showToast('Marque como obtida antes de adicionar repetida', 'error');
         return;
       }
       changeDup(code, 1);
       popCell(td);
-      if (navigator.vibrate) navigator.vibrate(15);
+      if (navigator.vibrate) navigator.vibrate(10);
     }
+  }
+
+  // Touch/Pointer: resposta imediata (sem esperar o click ~300ms do iOS)
+  let activePointer = null;
+  let pointerStartX = 0, pointerStartY = 0;
+  let pointerMoved = false;
+  document.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'mouse') return; // mouse usa click
+    const td = e.target.closest('td.code');
+    if (!td) return;
+    activePointer = { id: e.pointerId, td };
+    pointerStartX = e.clientX;
+    pointerStartY = e.clientY;
+    pointerMoved = false;
+  }, { passive: true });
+  document.addEventListener('pointermove', (e) => {
+    if (!activePointer || e.pointerId !== activePointer.id) return;
+    if (Math.abs(e.clientX - pointerStartX) > 10 || Math.abs(e.clientY - pointerStartY) > 10) {
+      pointerMoved = true;
+    }
+  }, { passive: true });
+  document.addEventListener('pointerup', (e) => {
+    if (!activePointer || e.pointerId !== activePointer.id) return;
+    const td = activePointer.td;
+    activePointer = null;
+    if (pointerMoved) return;
+    if (longPressFired) { longPressFired = false; suppressNextClick = true; return; }
+    suppressNextClick = true; // evita double-fire pelo click sintético
+    handleCellActivate(td);
+  }, { passive: true });
+  document.addEventListener('pointercancel', () => { activePointer = null; }, { passive: true });
+
+  // Click: mouse e teclado (Enter via foco)
+  document.addEventListener('click', (e) => {
+    const td = e.target.closest('td.code');
+    if (!td) return;
+    if (suppressNextClick) { suppressNextClick = false; return; }
+    handleCellActivate(td);
   });
 
   document.addEventListener('contextmenu', (e) => {
@@ -1082,6 +1133,7 @@
   // - aba Coleção: +1 repetida (atalho rápido sem trocar de aba)
   let longPressTimer = null;
   let longPressTarget = null;
+  let longPressFired = false;
   let suppressNextClick = false;
   const LONG_PRESS_MS = 500;
 
@@ -1113,6 +1165,7 @@
         showToast(`Repetida +1 (${code})`, 'success');
       }
       popCell(td);
+      longPressFired = true;
       suppressNextClick = true;
       if (navigator.vibrate) navigator.vibrate(40);
       longPressTimer = null;
