@@ -98,6 +98,41 @@
     box-shadow: var(--shadow-md);
     padding-top: 10px;
   }
+  .collapsible {
+    overflow: hidden;
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s, margin 0.3s, padding 0.3s;
+    max-height: 500px;
+  }
+  .sticky-bar.collapsed .collapsible {
+    max-height: 0 !important;
+    opacity: 0;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin: 0 !important;
+    pointer-events: none;
+  }
+  .collapse-toggle {
+    display: none;
+    position: absolute;
+    right: 10px;
+    top: 6px;
+    background: var(--surface);
+    color: #fff;
+    border: 1px solid var(--border);
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1;
+    padding: 0;
+    z-index: 60;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: transform 0.25s;
+  }
+  .sticky-bar.collapsed .collapse-toggle { transform: rotate(180deg); }
   .toolbar {
     display: flex;
     justify-content: center;
@@ -611,6 +646,8 @@
     .tab { padding: 10px 16px; font-size: 13px; }
     .toolbar { gap: 6px; padding: 4px 10px 10px; }
     .toolbar .stat, .toolbar button { font-size: 12px; padding: 7px 12px; }
+    .collapse-toggle { display: flex; align-items: center; justify-content: center; }
+    .sticky-bar { padding-top: 6px; }
     .coffee { margin: 28px 12px 12px; padding: 18px; }
     .coffee .qr img { width: 144px; height: 144px; }
     .scroll-top { width: 44px; height: 44px; font-size: 20px; }
@@ -623,8 +660,9 @@
     <p>Álbum Panini 2026 • Toque para marcar como obtido</p>
   </header>
 
-  <div class="sticky-bar">
-    <div class="toolbar">
+  <div class="sticky-bar" id="stickyBar">
+    <button type="button" class="collapse-toggle" id="collapseToggle" aria-label="Recolher/expandir barra" aria-expanded="true">⌃</button>
+    <div class="toolbar collapsible">
       <div class="stat" id="stat">✅ Obtidas: <strong>0 / 0</strong></div>
       <div class="stat" id="dupStat" title="Total de figurinhas repetidas">🔁 Repetidas: <strong>0</strong></div>
       <div class="stat" id="missStat" title="Total de figurinhas faltantes">📌 Faltantes: <strong>0</strong></div>
@@ -637,7 +675,7 @@
       <input type="file" id="importFile" accept="application/json" hidden />
     </div>
 
-    <div class="progress-wrap">
+    <div class="progress-wrap collapsible">
       <div class="progress"><div class="fill" id="progressFill"></div></div>
       <div class="progress-label" id="progressLabel">0%</div>
     </div>
@@ -1255,6 +1293,38 @@
   scrollTopBtn.addEventListener('click', () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
+
+  // ===== Auto-recolher barra ao rolar (mobile) =====
+  const stickyBar = document.getElementById('stickyBar');
+  const collapseToggle = document.getElementById('collapseToggle');
+  let lastScrollY = window.scrollY;
+  let userToggled = false;
+  const isMobile = () => window.matchMedia('(max-width: 600px)').matches;
+
+  function setCollapsed(state) {
+    stickyBar.classList.toggle('collapsed', state);
+    collapseToggle.setAttribute('aria-expanded', String(!state));
+  }
+
+  collapseToggle.addEventListener('click', () => {
+    userToggled = true;
+    setCollapsed(!stickyBar.classList.contains('collapsed'));
+  });
+
+  window.addEventListener('scroll', () => {
+    if (!isMobile()) { setCollapsed(false); return; }
+    if (userToggled) return;
+    const y = window.scrollY;
+    const diff = y - lastScrollY;
+    if (y < 80) {
+      setCollapsed(false);
+    } else if (diff > 6) {
+      setCollapsed(true);
+    } else if (diff < -6) {
+      setCollapsed(false);
+    }
+    lastScrollY = y;
+  }, { passive: true });
 </script>
 
 <!-- GoatCounter analytics -->
