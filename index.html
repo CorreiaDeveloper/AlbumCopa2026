@@ -61,6 +61,41 @@
         url('bgCUp.png') center center / cover no-repeat scroll,
         var(--green-800);
     }
+    /* Desativa backdrop-filter (muito pesado no iOS) e troca por cor sólida */
+    .sticky-bar {
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      background: #064e25 !important;
+    }
+    .toolbar .stat,
+    .toolbar button,
+    .search-wrap input,
+    .coffee {
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+    /* Para animation infinita da progress (consome GPU continuamente) */
+    .progress > .fill {
+      animation: none !important;
+      background: linear-gradient(90deg, var(--green-400), var(--gold-400)) !important;
+      box-shadow: none !important;
+    }
+    /* Remove transições/hover de células em touch (causam repaint a cada toque) */
+    td, td.code, td.code:hover, td.code.got:hover {
+      transition: none !important;
+      transform: none !important;
+    }
+    td.code:hover { background: var(--green-600); box-shadow: none; }
+    td.code.got:hover { background: linear-gradient(180deg, var(--gold-400), var(--gold-500)); }
+    /* Simplifica sombra da bandeira sticky */
+    td.flag-cell { box-shadow: 2px 0 4px rgba(0,0,0,0.15); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 
   /* ============ HEADER ============ */
@@ -1299,9 +1334,11 @@
   const collapseToggle = document.getElementById('collapseToggle');
   let lastScrollY = window.scrollY;
   let userToggled = false;
+  let collapseRaf = 0;
   const isMobile = () => window.matchMedia('(max-width: 600px)').matches;
 
   function setCollapsed(state) {
+    if (stickyBar.classList.contains('collapsed') === state) return;
     stickyBar.classList.toggle('collapsed', state);
     collapseToggle.setAttribute('aria-expanded', String(!state));
   }
@@ -1312,18 +1349,18 @@
   });
 
   window.addEventListener('scroll', () => {
-    if (!isMobile()) { setCollapsed(false); return; }
-    if (userToggled) return;
-    const y = window.scrollY;
-    const diff = y - lastScrollY;
-    if (y < 80) {
-      setCollapsed(false);
-    } else if (diff > 6) {
-      setCollapsed(true);
-    } else if (diff < -6) {
-      setCollapsed(false);
-    }
-    lastScrollY = y;
+    if (collapseRaf) return;
+    collapseRaf = requestAnimationFrame(() => {
+      collapseRaf = 0;
+      if (!isMobile()) { setCollapsed(false); return; }
+      if (userToggled) return;
+      const y = window.scrollY;
+      const diff = y - lastScrollY;
+      if (y < 80) setCollapsed(false);
+      else if (diff > 8) setCollapsed(true);
+      else if (diff < -8) setCollapsed(false);
+      lastScrollY = y;
+    });
   }, { passive: true });
 </script>
 
