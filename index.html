@@ -699,9 +699,8 @@
     <p>Álbum Panini 2026 • Toque para marcar como obtido</p>
   </header>
 
-  <div class="sticky-bar" id="stickyBar">
-    <button type="button" class="collapse-toggle" id="collapseToggle" aria-label="Recolher/expandir barra" aria-expanded="true">⌃</button>
-    <div class="toolbar collapsible">
+  <div class="top-controls">
+    <div class="toolbar">
       <div class="stat" id="stat">✅ Obtidas: <strong>0 / 0</strong></div>
       <div class="stat" id="dupStat" title="Total de figurinhas repetidas">🔁 Repetidas: <strong>0</strong></div>
       <div class="stat" id="missStat" title="Total de figurinhas faltantes">📌 Faltantes: <strong>0</strong></div>
@@ -714,11 +713,13 @@
       <input type="file" id="importFile" accept="application/json" hidden />
     </div>
 
-    <div class="progress-wrap collapsible">
+    <div class="progress-wrap">
       <div class="progress"><div class="fill" id="progressFill"></div></div>
       <div class="progress-label" id="progressLabel">0%</div>
     </div>
+  </div>
 
+  <div class="sticky-bar" id="stickyBar">
     <div class="search-wrap">
       <span class="search-icon">🔎</span>
       <input id="searchInput" type="search" inputmode="search" autocomplete="off"
@@ -1383,38 +1384,8 @@
   });
 
   // ===== Auto-recolher barra ao rolar (mobile) =====
-  const stickyBar = document.getElementById('stickyBar');
-  const collapseToggle = document.getElementById('collapseToggle');
-  let lastScrollY = window.scrollY;
-  let userToggled = false;
-  let collapseRaf = 0;
-  const isMobile = () => window.matchMedia('(max-width: 600px)').matches;
-
-  function setCollapsed(state) {
-    if (stickyBar.classList.contains('collapsed') === state) return;
-    stickyBar.classList.toggle('collapsed', state);
-    collapseToggle.setAttribute('aria-expanded', String(!state));
-  }
-
-  collapseToggle.addEventListener('click', () => {
-    userToggled = true;
-    setCollapsed(!stickyBar.classList.contains('collapsed'));
-  });
-
-  window.addEventListener('scroll', () => {
-    if (collapseRaf) return;
-    collapseRaf = requestAnimationFrame(() => {
-      collapseRaf = 0;
-      if (!isMobile()) { setCollapsed(false); return; }
-      if (userToggled) return;
-      const y = window.scrollY;
-      const diff = y - lastScrollY;
-      if (y < 80) setCollapsed(false);
-      else if (diff > 8) setCollapsed(true);
-      else if (diff < -8) setCollapsed(false);
-      lastScrollY = y;
-    });
-  }, { passive: true });
+  // Desativado: agora os controles de cima rolam naturalmente e
+  // apenas a busca + abas ficam fixas no topo.
 </script>
 
 <!-- GoatCounter analytics -->
