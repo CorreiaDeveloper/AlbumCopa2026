@@ -505,6 +505,7 @@
       <div class="stat" id="missStat" title="Total de figurinhas faltantes">Faltantes: 0</div>
       <button id="copyDupBtn" type="button">Copiar repetidas</button>
       <button id="copyMissBtn" type="button">Copiar faltantes</button>
+      <button id="copyBothBtn" type="button">Copiar Faltantes e Repetidas</button>
       <button id="exportBtn" type="button">Exportar</button>
       <button id="importBtn" type="button">Importar</button>
       <button id="resetBtn" class="danger" type="button">Limpar</button>
@@ -983,11 +984,47 @@
   render();
   setMode('collection');
 
+  // ===== Helpers para formatar listas agrupadas por país =====
+  const teamByPrefix = Object.fromEntries(teams.map(t => [t.prefix, t]));
+  function flagEmoji(iso) {
+    if (!iso) return '';
+    if (iso === 'gb-sct') return '\u{1F3F4}\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}';
+    if (iso === 'gb-eng') return '\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}';
+    if (iso.length !== 2) return '';
+    const A = 0x1F1E6;
+    const up = iso.toUpperCase();
+    return String.fromCodePoint(A + up.charCodeAt(0) - 65, A + up.charCodeAt(1) - 65);
+  }
+  function parseCode(code) {
+    const m = code.match(/^([A-Z]+)(\d+)$/);
+    if (m) return { prefix: m[1], num: m[2] };
+    if (code === '00') return { prefix: 'FWC', num: '00' };
+    return { prefix: code, num: '' };
+  }
+  // items: array of [code, qty]. Já deve vir ordenado pela ordem do álbum.
+  function formatGroupedList(title, items) {
+    const groups = new Map();
+    const order = [];
+    for (const [code, qty] of items) {
+      const { prefix, num } = parseCode(code);
+      if (!groups.has(prefix)) { groups.set(prefix, []); order.push(prefix); }
+      groups.get(prefix).push(qty > 1 ? `${num} (x${qty})` : num);
+    }
+    const lines = [title];
+    for (const prefix of order) {
+      const team = teamByPrefix[prefix];
+      const flag = team ? flagEmoji(team.iso) : (prefix === 'FWC' ? '\u{1F3C6}' : '');
+      const label = flag ? `${prefix} ${flag}` : prefix;
+      lines.push(`${label}: ${groups.get(prefix).join(', ')}`);
+    }
+    return lines.join('\n');
+  }
+
   // ===== Botão copiar lista de repetidas =====
   document.getElementById('copyDupBtn').addEventListener('click', async () => {
     const entries = Object.entries(dups).sort((a, b) => compareAlbum(a[0], b[0]));
     if (entries.length === 0) { showToast('Você ainda não tem repetidas', 'error'); return; }
-    const text = entries.map(([c, q]) => `${c} (x${q})`).join(', ');
+    const text = formatGroupedList('(Repetidas)', entries);
     try {
       await navigator.clipboard.writeText(text);
       showToast('Lista de repetidas copiada!', 'success');
@@ -1001,10 +1038,35 @@
     const missing = allValidCodes().filter(c => !owned.has(c));
     if (missing.length === 0) { showToast('Você não tem faltantes!', 'success'); return; }
     missing.sort(compareAlbum);
-    const text = missing.join(', ');
+    const text = formatGroupedList('(Faltantes)', missing.map(c => [c, 1]));
     try {
       await navigator.clipboard.writeText(text);
       showToast('Lista de faltantes copiada!', 'success');
+    } catch {
+      prompt('Copie a lista abaixo:', text);
+    }
+  });
+
+  // ===== Botão copiar faltantes e repetidas juntos =====
+  document.getElementById('copyBothBtn').addEventListener('click', async () => {
+    const missing = allValidCodes().filter(c => !owned.has(c));
+    const dupEntries = Object.entries(dups).sort((a, b) => compareAlbum(a[0], b[0]));
+    if (missing.length === 0 && dupEntries.length === 0) {
+      showToast('Nada para copiar', 'error');
+      return;
+    }
+    const parts = [];
+    if (missing.length > 0) {
+      missing.sort(compareAlbum);
+      parts.push(formatGroupedList('(Faltantes)', missing.map(c => [c, 1])));
+    }
+    if (dupEntries.length > 0) {
+      parts.push(formatGroupedList('(Repetidas)', dupEntries));
+    }
+    const text = parts.join('\n\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('Listas copiadas!', 'success');
     } catch {
       prompt('Copie a lista abaixo:', text);
     }
